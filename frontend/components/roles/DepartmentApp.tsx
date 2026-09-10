@@ -237,33 +237,40 @@ export default function DepartmentApp() {
 
             {/* Needs Review */}
             {queueTab === "review" && (
-              <div className="space-y-3" style={{ maxHeight: "360px", overflowY: "auto" }}>
-                <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "#FFF8E1", border: "1px solid #C6A55C" }}>
-                  <IconAlertTriangle size={16} color="#B8860B" />
-                  <div>
-                    <p className="text-[11px] font-bold" style={{ color: "#B8860B" }}>AI Merge</p>
-                    <p className="text-[11px]" style={{ color: "#5A6B84" }}>5 similar reports were identified at this location. Root cause appears to be structural.</p>
-                  </div>
-                </div>
-                {reviewIncidents.map((inc, idx) => (
-                  <div key={inc.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "#F8F7F4" }}>
-                    <CategoryBadge category={inc.category} size="md" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                        <p className="text-xs font-bold" style={{ color: "#16233A" }}>{inc.category} · Street 14</p>
-                        {idx === 0 && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#FFF3E0", color: "#B8860B" }}>Overdue 2 hrs</span>
-                        )}
-                        {idx < 2 && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#EAF0FA", color: "#0E2A4E" }}>AI merged</span>
-                        )}
+              <div className="space-y-3" style={{ maxHeight: "380px", overflowY: "auto" }}>
+                {reviewIncidents.map((inc, idx) => {
+                  // deterministic merged count per item (0 = not merged)
+                  const mergedCount = idx === 0 ? 6 : idx === 1 ? 5 : idx === 2 ? 3 : 0;
+                  return (
+                    <div key={inc.id} className="rounded-xl overflow-hidden" style={{ background: "#F8F7F4", border: "1px solid #EFEBE3" }}>
+                      <div className="flex items-center gap-3 p-3">
+                        <CategoryBadge category={inc.category} size="md" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                            <p className="text-xs font-bold" style={{ color: "#16233A" }}>{inc.category} · Street 14</p>
+                            {idx === 0 && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#FFF3E0", color: "#B8860B" }}>Overdue 2 hrs</span>
+                            )}
+                            {mergedCount > 0 && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#EAF0FA", color: "#0E2A4E" }}>#{mergedCount} merged</span>
+                            )}
+                          </div>
+                          <p className="text-[11px]" style={{ color: "#5A6B84" }}>{inc.shortCode} · verified by Ahmed Raza · {2 + idx * 3} hrs old</p>
+                        </div>
+                        <button onClick={() => openWorkOrderModal(inc.id)}
+                          className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white whitespace-nowrap" style={{ background: "#0E8A5F" }}>Review</button>
                       </div>
-                      <p className="text-[11px]" style={{ color: "#5A6B84" }}>{inc.shortCode} · verified by Ahmed Raza · {2 + idx * 3} hrs old</p>
+                      {mergedCount > 0 && (
+                        <div className="px-3 py-2 flex items-start gap-1.5" style={{ background: "#EAF0FA", borderTop: "1px solid #DCE6F5" }}>
+                          <IconAlertTriangle size={12} color="#0E2A4E" />
+                          <p className="text-[10px]" style={{ color: "#0E2A4E" }}>
+                            <span className="font-bold">AI Merge:</span> {mergedCount} similar reports were identified at this location. Root cause appears to be structural.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <button onClick={() => openWorkOrderModal(inc.id)}
-                      className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white whitespace-nowrap" style={{ background: "#0E8A5F" }}>Review</button>
-                  </div>
-                ))}
+                  );
+                })}
                 {reviewIncidents.length === 0 && (
                   <p className="text-center text-xs py-6" style={{ color: "#5A6B84" }}>Nothing to review</p>
                 )}

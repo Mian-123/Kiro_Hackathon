@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/Icons";
 import {
   MOCK_CITIZEN_REPORTS, MOCK_INCIDENTS, MOCK_NOTIFICATIONS,
-  MOCK_ANNOUNCEMENTS, LAHORE_INCIDENT_MARKERS,
+  MOCK_ANNOUNCEMENTS, LAHORE_INCIDENT_MARKERS, CATEGORY_META, nearbyPOIs,
 } from "@/lib/mock-data";
 import { useAppState } from "@/lib/app-state";
 import { formatRelativeTime, formatDateTime } from "@/lib/utils";
@@ -631,31 +631,60 @@ export default function CitizenApp() {
                 <LocationPickerMap height="200px"
                   picked={pickedLocation ?? (geo.lat && geo.lng ? { lat: geo.lat, lng: geo.lng } : null)}
                   onPick={(lng, lat) => setPickedLocation({ lng, lat })} />
-                <p className="text-xs mt-2 mb-4" style={{ color: "#5A6B84" }}>Tap map to adjust the pin</p>
+                <p className="text-xs mt-2 mb-3" style={{ color: "#5A6B84" }}>Tap map to adjust the pin</p>
+
+                {/* AI proximity / priority notice */}
+                {(() => {
+                  const plat = geo.lat ?? pickedLocation?.lat;
+                  const plng = geo.lng ?? pickedLocation?.lng;
+                  if (plat == null || plng == null) return null;
+                  const near = nearbyPOIs(plat, plng, 500);
+                  const sensitive = near.filter((n) => n.poi.type === "hospital" || n.poi.type === "school");
+                  if (sensitive.length === 0) return null;
+                  const top = sensitive[0];
+                  return (
+                    <div className="rounded-xl p-3 mb-4 border" style={{ background: "#FEF0EE", borderColor: "#C0392B" }}>
+                      <div className="flex items-start gap-2">
+                        <IconAlertTriangle size={16} color="#C0392B" />
+                        <div>
+                          <p className="text-xs font-bold" style={{ color: "#C0392B" }}>AI: Priority raised — sensitive location nearby</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: "#5A6B84" }}>
+                            {top.poi.name} ({top.poi.type}) is {top.distance}m away. Reports within 500m of a hospital or school are auto-prioritised.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <Button variant="primary" size="lg" className="w-full" disabled={!geo.lat && !pickedLocation} onClick={() => setStep(2)}>Continue</Button>
               </div>
             )}
 
-            {/* ── Step 2: Category ── */}
+            {/* ── Step 2: Category — "What is the problem?" ── */}
             {step === 2 && (
               <div>
-                <p className="text-lg font-bold mb-0.5" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Select Category</p>
-                <p className="text-xs mb-1" style={{ color: "#5A6B84" }}>
-                  AI suggests: <span className="font-semibold" style={{ color: "#0E8A5F" }}>Sewerage / Water (87%)</span>
-                </p>
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {CATEGORIES.map((cat) => (
-                    <button key={cat} onClick={() => setWizardCategory(cat)}
-                      className="bg-white rounded-2xl border p-3 text-left transition-all"
-                      style={{
-                        borderColor: wizardCategory === cat ? "#0E8A5F" : "#E6E3DC",
-                        background: wizardCategory === cat ? "#E7F4EF" : "white",
-                        boxShadow: wizardCategory === cat ? "0 0 0 2px rgba(14,138,95,0.2)" : "0 1px 3px rgba(10,31,60,0.07)",
-                      }}>
-                      <CategoryBadge category={cat} size="md" />
-                      <p className="text-xs font-semibold mt-2 leading-tight" style={{ color: "#16233A" }}>{cat}</p>
-                    </button>
-                  ))}
+                <p className="text-xl font-bold mb-0.5" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>What is the problem?</p>
+                <p className="text-xs mb-4" style={{ color: "#5A6B84" }}>Tap one category</p>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {CATEGORY_META.map((cat) => {
+                    const selected = wizardCategory === cat.name;
+                    const shortName = cat.name.split(" / ")[0];
+                    return (
+                      <button key={cat.name} onClick={() => setWizardCategory(cat.name)}
+                        className="rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all bg-white"
+                        style={{
+                          border: `1.5px solid ${selected ? "#0E8A5F" : "#E6E3DC"}`,
+                          background: selected ? "#E7F4EF" : "white",
+                          boxShadow: selected ? "0 0 0 3px rgba(14,138,95,0.18)" : "0 1px 4px rgba(10,31,60,0.07)",
+                          minHeight: 120,
+                        }}>
+                        <span style={{ fontSize: 30, lineHeight: 1 }}>{cat.emoji}</span>
+                        <p className="text-sm font-bold text-center leading-tight" style={{ color: "#16233A" }}>{cat.name.includes("/") ? cat.name : shortName}</p>
+                        <p className="text-xs" style={{ color: "#5A6B84", fontFamily: "'Noto Nastaliq Urdu',serif" }}>{cat.urdu}</p>
+                      </button>
+                    );
+                  })}
                 </div>
                 <Button variant="primary" size="lg" className="w-full" disabled={!wizardCategory} onClick={() => setStep(3)}>Continue</Button>
               </div>

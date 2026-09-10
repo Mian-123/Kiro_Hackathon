@@ -563,3 +563,71 @@ export const MOCK_UC_BREAKDOWN: MockUCBreakdown[] = [
   { uc: "UC-42 Iqbal Town",  totalSolved: 115, pending: 31, inProcess: 22, completed: 12 },
   { uc: "UC-18 Samanabad",   totalSolved: 64,  pending: 45, inProcess: 13, completed: 5  },
 ];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Points of Interest — AI proximity priority (hospital / school within 500m)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface MockPOI {
+  id: string;
+  name: string;
+  type: "hospital" | "school" | "market" | "mosque";
+  lat: number;
+  lng: number;
+}
+
+export const MOCK_POIS: MockPOI[] = [
+  { id: "poi-1", name: "Services Hospital",      type: "hospital", lat: 31.5134, lng: 74.3470 },
+  { id: "poi-2", name: "Jinnah Hospital",        type: "hospital", lat: 31.4790, lng: 74.2960 },
+  { id: "poi-3", name: "Mayo Hospital",          type: "hospital", lat: 31.5720, lng: 74.3110 },
+  { id: "poi-4", name: "Gulberg Girls School",   type: "school",   lat: 31.5150, lng: 74.3460 },
+  { id: "poi-5", name: "LGS Johar Town",         type: "school",   lat: 31.5260, lng: 74.3660 },
+  { id: "poi-6", name: "Model Town Grammar",     type: "school",   lat: 31.5085, lng: 74.3725 },
+  { id: "poi-7", name: "Ichhra Bazaar",          type: "market",   lat: 31.5055, lng: 74.3585 },
+  { id: "poi-8", name: "Liberty Market",         type: "market",   lat: 31.5100, lng: 74.3480 },
+];
+
+// Haversine distance in metres (used to find POIs near a report)
+export function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Returns POIs within `radius` metres of a point, nearest first
+export function nearbyPOIs(lat: number, lng: number, radius = 500): { poi: MockPOI; distance: number }[] {
+  return MOCK_POIS
+    .map((poi) => ({ poi, distance: Math.round(distanceMeters(lat, lng, poi.lat, poi.lng)) }))
+    .filter((x) => x.distance <= radius)
+    .sort((a, b) => a.distance - b.distance);
+}
+
+// ── Category metadata for the report wizard (icon + Urdu label) ──────────────
+export interface CategoryMeta {
+  name: string;
+  urdu: string;
+  emoji: string;   // simple glyph used in the big selection cards
+}
+
+export const CATEGORY_META: CategoryMeta[] = [
+  { name: "Garbage / Waste",           urdu: "کچرا",            emoji: "🗑" },
+  { name: "Broken Road",               urdu: "ٹوٹی سڑک",        emoji: "🕳" },
+  { name: "Sewerage / Water",          urdu: "سیوریج / پانی",   emoji: "💧" },
+  { name: "Streetlight",               urdu: "اسٹریٹ لائٹ",     emoji: "💡" },
+  { name: "Encroachment",              urdu: "تجاوزات",         emoji: "🚧" },
+  { name: "Flooding / Standing Water", urdu: "سیلابی پانی",     emoji: "🌊" },
+  { name: "Safety Hazard",             urdu: "حفاظتی خطرہ",     emoji: "⚠" },
+  { name: "Drainage",                  urdu: "نکاسی",           emoji: "🔧" },
+  { name: "Infrastructure",            urdu: "انفراسٹرکچر",     emoji: "🏗" },
+  { name: "Other",                     urdu: "دیگر",            emoji: "📋" },
+];
+
+// ── More contractors ─────────────────────────────────────────────────────────
+export const MOCK_CONTRACTORS_EXTRA: MockContractor[] = [
+  { id: "con-004", name: "SafeCity Electric", specialty: "Electrical & Lighting", rating: 4.9, completedJobs: 210, pendingJobs: 2, avatarInitials: "SC" },
+  { id: "con-005", name: "Bilal & Sons",      specialty: "Drainage & Sewerage",   rating: 4.5, completedJobs: 133, pendingJobs: 4, avatarInitials: "BS" },
+  { id: "con-006", name: "Ravi Constructors", specialty: "Roads & Paving",        rating: 4.2, completedJobs: 87,  pendingJobs: 6, avatarInitials: "RC" },
+];
