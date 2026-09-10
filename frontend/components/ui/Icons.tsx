@@ -122,6 +122,13 @@ export const IconMerge = ({ size = 20, className = "" }: IconProps) => (
   </svg>
 );
 
+export const IconAI = ({ size = 20, className = "" }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3H5a3 3 0 0 0 0 6h1a3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3h1a3 3 0 0 0 0-6h-1a3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z" />
+    <circle cx="12" cy="12" r="2" />
+  </svg>
+);
+
 export const IconZap = ({ size = 20, className = "" }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
     <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2" />

@@ -15,7 +15,7 @@ import {
 import { useAppState } from "@/lib/app-state";
 import { formatRelativeTime, formatDate } from "@/lib/utils";
 
-type View = "home" | "verify-list" | "verify-detail" | "area-map" | "incidents" | "incident-detail" | "field-report" | "messages" | "profile";
+type View = "home" | "verify-list" | "verify-detail" | "contractor-work" | "area-map" | "incidents" | "incident-detail" | "field-report" | "messages" | "profile";
 
 const HEALTH_COLOR = (s: number) => s >= 75 ? "#0E8A5F" : s >= 50 ? "#E0A400" : "#C0392B";
 
@@ -35,12 +35,12 @@ export default function StreetRepApp() {
   const [replyMsgId, setReplyMsgId]         = useState<string|null>(null);
 
   const area             = MOCK_STREET_AREA;
-  const { liveReports, verifyReport: verifyLiveReport, rejectReport: rejectLiveReport } = useAppState();
+  const { liveReports, verifyReport: verifyLiveReport, rejectReport: rejectLiveReport, workOrders, disputeWorkOrder } = useAppState();
 
   // Combine live submitted reports + static pending
   const livePending = liveReports
     .filter((r) => r.status === "SUBMITTED")
-    .map((r) => ({ id: r.id, shortCode: r.shortCode, category: r.category, description: r.description, street: r.street, submittedAt: r.submittedAt, hasPhoto: r.hasPhoto, isLive: true as const }));
+    .map((r) => ({ id: r.id, shortCode: r.shortCode, category: r.category, description: r.description, street: r.street, address: r.address, latitude: r.latitude, longitude: r.longitude, submittedAt: r.submittedAt, hasPhoto: r.hasPhoto, isLive: true as const }));
 
   const staticPending = MOCK_REP_PENDING_REPORTS
     .filter((r) => !verifiedIds.includes(r.id) && !rejectedIds.includes(r.id) && !mergedIds.includes(r.id))
@@ -134,14 +134,14 @@ export default function StreetRepApp() {
                 Monthly checklist · St 9
               </button>
 
-              <button className="w-full bg-white rounded-2xl py-4 flex items-center justify-between px-5 text-sm font-semibold" style={{ color: "#16233A", boxShadow: "0 1px 4px rgba(10,31,60,0.08)" }}>
+              <button onClick={() => setView("contractor-work")} className="w-full bg-white rounded-2xl py-4 flex items-center justify-between px-5 text-sm font-semibold" style={{ color: "#16233A", boxShadow: "0 1px 4px rgba(10,31,60,0.08)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: "#E7F4EF" }}>
                     <IconCheck size={12} color="#0E8A5F" />
                   </div>
                   Verify completed work
                 </div>
-                <span className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs text-white" style={{ background: "#0E8A5F" }}>1</span>
+                <span className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs text-white" style={{ background: "#0E8A5F" }}>{workOrders.filter((w) => w.status === "COMPLETED").length}</span>
               </button>
             </div>
           </div>
@@ -230,7 +230,26 @@ export default function StreetRepApp() {
                 </div>
               </div>
               <p className="text-sm italic" style={{ color: "#5A6B84" }}>"{selectedReport.description}"</p>
-              <p className="text-xs mt-2" style={{ color: "#B0BAC8" }}>Resident · {selectedReport.street}</p>
+              <div className="mt-3 rounded-xl p-2.5" style={{ background: "#F5F3EF", border: "1px solid #E6E3DC" }}>
+                <div className="flex items-start gap-1.5">
+                  <span style={{ color: "#0E8A5F", fontWeight: 700, fontSize: 12 }}>&#9679;</span>
+                  <div>
+                    {(() => {
+                      const geo = selectedReport as { address?: string; latitude?: number; longitude?: number; street: string };
+                      const lat = typeof geo.latitude === "number" ? geo.latitude : null;
+                      const lng = typeof geo.longitude === "number" ? geo.longitude : null;
+                      return (
+                        <>
+                          <p className="text-xs font-semibold" style={{ color: "#16233A" }}>{geo.address || geo.street}</p>
+                          {lat != null && lng != null && (
+                            <p className="text-[11px] font-mono mt-0.5" style={{ color: "#5A6B84" }}>{lat.toFixed(5)}, {lng.toFixed(5)}</p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Action buttons */}
@@ -272,6 +291,63 @@ export default function StreetRepApp() {
                 style={{ background: "white", color: "#16233A", borderColor: "#E6E3DC" }}>
                 <IconMerge size={14} /> Merge duplicate
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* ══ CONTRACTOR WORK REVIEW ════════════════════════════════════════ */}
+        {view === "contractor-work" && (
+          <div className="px-4 py-4">
+            <button onClick={() => setView("home")} className="flex items-center gap-1 text-xs mb-1 font-medium" style={{ color: "#5A6B84" }}>
+              <IconArrowLeft size={12} /> My Streets
+            </button>
+            <p className="text-xl font-bold mb-0.5" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Verify Completed Work</p>
+            <p className="text-sm mb-4" style={{ color: "#5A6B84" }}>Review contractor work before citizen sign-off</p>
+
+            <div className="space-y-3">
+              {workOrders.filter((w) => w.status === "COMPLETED").map((w) => (
+                <div key={w.id} className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 4px rgba(10,31,60,0.08)", border: "1px solid #F0EDE6" }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <CategoryBadge category={w.category} size="lg" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold" style={{ color: "#16233A" }}>{w.category}</p>
+                      <p className="text-[11px]" style={{ color: "#5A6B84" }}>{w.address}</p>
+                      <p className="text-[10px]" style={{ color: "#5A6B84" }}>Contractor: {w.contractor}</p>
+                    </div>
+                  </div>
+
+                  {/* After photo */}
+                  <div className="rounded-xl h-36 mb-3 overflow-hidden flex items-center justify-center" style={{ background: "#E7F4EF", border: "1px solid #0E8A5F" }}>
+                    {w.contractorPhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={w.contractorPhotoUrl} alt="Completed work" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-center"><IconCheck size={28} color="#0E8A5F" /><p className="text-xs mt-1" style={{ color: "#0E8A5F" }}>Completion photo</p></div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button onClick={() => { verifyLiveReport(w.id); setView("home"); }}
+                      className="flex-1 py-3 rounded-2xl text-sm font-bold text-white" style={{ background: "#0E8A5F" }}>
+                      Approve Work
+                    </button>
+                    <button onClick={() => { disputeWorkOrder(w.id, "Work not up to standard — the issue still persists on site."); setView("home"); }}
+                      className="flex-1 py-3 rounded-2xl text-sm font-bold border" style={{ background: "#FEF0EE", color: "#C0392B", borderColor: "#C0392B" }}>
+                      Reject / Dispute
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {workOrders.filter((w) => w.status === "COMPLETED").length === 0 && (
+                <div className="text-center py-12">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: "#E7F4EF" }}>
+                    <IconCheck size={24} color="#0E8A5F" />
+                  </div>
+                  <p className="text-sm font-bold" style={{ color: "#16233A" }}>No completed work to verify</p>
+                  <p className="text-xs mt-1" style={{ color: "#5A6B84" }}>When a contractor completes a job it appears here.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

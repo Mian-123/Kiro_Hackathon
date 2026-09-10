@@ -270,7 +270,18 @@ export const MOCK_INCIDENTS: MockIncident[] = [
 ];
 
 // ── Duplicate detection mock ──────────────────────────────────────────────────
-export const MOCK_DUPLICATE_REPORTS = [
+export interface MockDuplicateReport {
+  id: string;
+  shortCode: string;
+  category: string;
+  description: string;
+  street: string;
+  location?: string;
+  distance_m: number;
+  submittedAt: Date;
+}
+
+export const MOCK_DUPLICATE_REPORTS: MockDuplicateReport[] = [
   { id: "dup-001", shortCode: "LHR-2DA1D", category: "Broken Road", description: "big pothole near main gate blocking cars",        street: "Street 14, Block 6", distance_m: 45, submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
   { id: "dup-002", shortCode: "LHR-B6BE7", category: "Broken Road", description: "huge pothole near main gate",                      street: "Street 14, Block 6", distance_m: 12, submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
   { id: "dup-003", shortCode: "LHR-48D6D", category: "Broken Road", description: "road damage near main entrance very bad pothole",  street: "Street 14, Block 6", distance_m: 28, submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },

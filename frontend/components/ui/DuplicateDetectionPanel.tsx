@@ -137,7 +137,7 @@ export function DuplicateDetectionPanel({
             <div>
               <p className="text-xs font-bold text-[#16233A]">{reports[0]?.category}</p>
               <p className="text-[11px] text-[#5A6B84]">
-                {reports[0]?.location} · {signals.reportCount} citizens reported
+                {reports[0]?.street || reports[0]?.location} · {signals.reportCount} citizens reported
               </p>
             </div>
           </div>

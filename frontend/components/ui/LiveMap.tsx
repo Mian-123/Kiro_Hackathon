@@ -10,6 +10,9 @@ export interface MapMarker {
   color: string;
   label: string;
   category: string;
+  address?: string;
+  status?: string;
+  priority?: string;
 }
 
 interface LiveMapProps {
@@ -38,6 +41,108 @@ const OSM_STYLE = {
   },
   layers: [{ id: "osm", type: "raster" as const, source: "osm" }],
 };
+
+// Status label + colour lookup for popups
+const STATUS_LABELS: Record<string, string> = {
+  SUBMITTED: "Submitted",
+  VERIFIED: "Verified",
+  ASSIGNED: "Assigned",
+  IN_PROGRESS: "In Progress",
+  RESOLUTION_SUBMITTED: "Resolution Submitted",
+  AWAITING_CITIZEN_VERIFICATION: "Awaiting Verification",
+  RESOLVED: "Resolved",
+  REOPENED: "Reopened",
+  REJECTED: "Rejected",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  SUBMITTED: "#5A6B84",
+  VERIFIED: "#2563EB",
+  ASSIGNED: "#7C3AED",
+  IN_PROGRESS: "#E0A400",
+  RESOLUTION_SUBMITTED: "#C6A55C",
+  AWAITING_CITIZEN_VERIFICATION: "#C6A55C",
+  RESOLVED: "#0E8A5F",
+  REOPENED: "#C0392B",
+  REJECTED: "#C0392B",
+};
+
+// Build a prominent, non-drifting marker DOM element
+function createMarkerElement(m: MapMarker): HTMLDivElement {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = [
+    "width:22px",
+    "height:22px",
+    "display:flex",
+    "align-items:center",
+    "justify-content:center",
+    "cursor:pointer",
+  ].join(";");
+
+  const dot = document.createElement("div");
+  dot.style.cssText = [
+    "width:18px",
+    "height:18px",
+    "border-radius:50%",
+    `background:${m.color}`,
+    "border:3px solid white",
+    "box-shadow:0 2px 10px rgba(0,0,0,0.5)",
+    "transition:transform 0.15s ease",
+  ].join(";");
+
+  wrap.appendChild(dot);
+  wrap.addEventListener("mouseenter", () => { dot.style.transform = "scale(1.5)"; });
+  wrap.addEventListener("mouseleave", () => { dot.style.transform = "scale(1)"; });
+  return wrap;
+}
+
+// Build popup HTML showing address, issue, and status
+function buildPopupHTML(m: MapMarker): string {
+  const statusKey = (m.status || "").toUpperCase();
+  const statusLabel = STATUS_LABELS[statusKey] || m.status || "";
+  const statusColor = STATUS_COLORS[statusKey] || "#5A6B84";
+
+  const rows: string[] = [];
+
+  // Title = short code / label
+  rows.push(
+    `<div style="font-size:13px;font-weight:700;color:#16233A;font-family:Outfit,sans-serif">${m.label}</div>`
+  );
+
+  // Issue category
+  rows.push(
+    `<div style="font-size:12px;color:#16233A;margin-top:3px;font-weight:600">${m.category}</div>`
+  );
+
+  // Address
+  if (m.address) {
+    rows.push(
+      `<div style="font-size:11px;color:#5A6B84;margin-top:3px;display:flex;align-items:flex-start;gap:4px">` +
+      `<span style="color:#0E8A5F;font-weight:700">&#9679;</span>${m.address}</div>`
+    );
+  }
+
+  // Status chip
+  if (statusLabel) {
+    rows.push(
+      `<div style="margin-top:6px">` +
+      `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;` +
+      `background:${statusColor}22;color:${statusColor}">${statusLabel}</span>` +
+      `</div>`
+    );
+  }
+
+  // Priority chip
+  if (m.priority) {
+    rows.push(
+      `<div style="margin-top:4px">` +
+      `<span style="font-size:10px;font-weight:600;color:#5A6B84">Priority: ${m.priority}</span>` +
+      `</div>`
+    );
+  }
+
+  return `<div style="min-width:160px;padding:2px">${rows.join("")}</div>`;
+}
 
 export function LiveMap({
   height = "300px",
@@ -88,33 +193,15 @@ export function LiveMap({
 
       mapRef.current = map;
 
-      // Add markers
+      // Add markers — anchored at bottom so they don't drift on zoom
       markers.forEach((m) => {
-        const el = document.createElement("div");
-        el.style.cssText = [
-          `width:14px`,
-          `height:14px`,
-          `border-radius:50%`,
-          `background:${m.color}`,
-          `border:2.5px solid white`,
-          `box-shadow:0 2px 8px rgba(0,0,0,0.45)`,
-          `cursor:pointer`,
-          `transition:transform 0.15s`,
-        ].join(";");
-        el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.4)"; });
-        el.addEventListener("mouseleave", () => { el.style.transform = "scale(1)"; });
-
-        const popup = new maplibregl.Popup({ offset: 14, closeButton: false })
-          .setHTML(
-            `<div style="font-size:12px;font-weight:600;color:#16233A;font-family:Outfit,sans-serif">${m.label}</div>` +
-            `<div style="font-size:11px;color:#5A6B84;margin-top:2px">${m.category}</div>`
-          );
-
-        const marker = new maplibregl.Marker({ element: el })
+        const el = createMarkerElement(m);
+        const popup = new maplibregl.Popup({ offset: 16, closeButton: true })
+          .setHTML(buildPopupHTML(m));
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
           .setLngLat([m.lng, m.lat])
           .setPopup(popup)
           .addTo(map);
-
         markersRef.current.push(marker);
       });
     });
@@ -138,30 +225,15 @@ export function LiveMap({
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
 
-      // Add new
+      // Add new — anchored at center so they stay pinned on zoom
       markers.forEach((m) => {
-        const el = document.createElement("div");
-        el.style.cssText = [
-          `width:14px`,
-          `height:14px`,
-          `border-radius:50%`,
-          `background:${m.color}`,
-          `border:2.5px solid white`,
-          `box-shadow:0 2px 8px rgba(0,0,0,0.45)`,
-          `cursor:pointer`,
-        ].join(";");
-
-        const popup = new maplibregl.Popup({ offset: 14, closeButton: false })
-          .setHTML(
-            `<div style="font-size:12px;font-weight:600;color:#16233A;font-family:Outfit,sans-serif">${m.label}</div>` +
-            `<div style="font-size:11px;color:#5A6B84;margin-top:2px">${m.category}</div>`
-          );
-
-        const marker = new maplibregl.Marker({ element: el })
+        const el = createMarkerElement(m);
+        const popup = new maplibregl.Popup({ offset: 16, closeButton: true })
+          .setHTML(buildPopupHTML(m));
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" })
           .setLngLat([m.lng, m.lat])
           .setPopup(popup)
           .addTo(mapRef.current!);
-
         markersRef.current.push(marker);
       });
     });

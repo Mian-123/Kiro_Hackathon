@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { PriorityBadge } from "@/components/ui/PriorityBadge";
-import { Timeline } from "@/components/ui/Timeline";
+import { Timeline, EventTimeline } from "@/components/ui/Timeline";
 import { LiveMap, LocationPickerMap, useGeolocation } from "@/components/ui/LiveMap";
 import { Button } from "@/components/ui/Button";
 import {
@@ -34,7 +34,7 @@ function liveStatusToType(s: "SUBMITTED" | "VERIFIED" | "REJECTED"): StatusType 
 }
 
 export default function CitizenApp() {
-  const { liveReports, addReport } = useAppState();
+  const { liveReports, addReport, workOrders, resolveWorkOrder } = useAppState();
 
   const [view, setView]                     = useState<View>("home");
   const [selectedIncidentId, setSelectedId] = useState<string | null>(null);
@@ -50,6 +50,7 @@ export default function CitizenApp() {
   const [verifyOutcome, setVerifyOutcome]   = useState<"confirm"|"reject"|null>(null);
   const [rejectReason, setRejectReason]     = useState("");
   const [verifyDone, setVerifyDone]         = useState(false);
+  const [woRating, setWoRating] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const geo = useGeolocation();
 
@@ -85,11 +86,17 @@ export default function CitizenApp() {
   }
 
   function handleSubmit() {
+    const lat = geo.lat ?? pickedLocation?.lat;
+    const lng = geo.lng ?? pickedLocation?.lng;
+    const resolvedAddress = geo.address ?? (lat && lng ? `Pinned location near ${lat.toFixed(4)}, ${lng.toFixed(4)}` : "Location pending");
     const id = addReport({
       shortCode: `LHR-${Math.random().toString(36).slice(2,7).toUpperCase()}`,
       category: wizardCategory,
       description: wizardDesc,
-      street: `${geo.lat ? "GPS Location" : "Pinned Location"}, Lahore`,
+      street: resolvedAddress,
+      address: resolvedAddress,
+      latitude: lat ?? undefined,
+      longitude: lng ?? undefined,
       hasPhoto: !!wizardImageFile,
     });
     setNewReportId(id);
@@ -294,6 +301,73 @@ export default function CitizenApp() {
         {view === "my-reports" && (
           <div className="px-4 py-4">
             <p className="text-base font-bold mb-3" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>My Reports</p>
+
+            {/* Live work orders — tracked with timestamps */}
+            {workOrders.length > 0 && (
+              <div className="mb-5 space-y-4">
+                {workOrders.map((w) => (
+                  <div key={w.id} className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 4px rgba(10,31,60,0.08)", border: "1px solid #E6E3DC" }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: "#16233A" }}>{w.category}</p>
+                        <p className="text-[11px] font-mono" style={{ color: "#5A6B84" }}>{w.shortCode}</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full"
+                        style={{ background: w.status === "RESOLVED" ? "#E7F4EF" : w.status === "COMPLETED" ? "#FFF8E1" : "#EAF0FA", color: w.status === "RESOLVED" ? "#0E8A5F" : w.status === "COMPLETED" ? "#B8860B" : "#0E2A4E" }}>
+                        {w.status.replace("_", " ")}
+                      </span>
+                    </div>
+
+                    {/* Before / After photos */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div>
+                        <div className="h-20 rounded-xl flex items-center justify-center" style={{ background: "#0A1F3C" }}>
+                          <IconCamera size={20} color="rgba(255,255,255,0.5)" />
+                        </div>
+                        <p className="text-[10px] text-center mt-1" style={{ color: "#5A6B84" }}>Before</p>
+                      </div>
+                      <div>
+                        <div className="h-20 rounded-xl flex items-center justify-center overflow-hidden" style={{ background: w.contractorPhotoUrl ? "transparent" : "#F5F3EF", border: "1px solid #E6E3DC" }}>
+                          {w.contractorPhotoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={w.contractorPhotoUrl} alt="After" className="w-full h-full object-cover" />
+                          ) : <IconCamera size={20} color="#B0BAC8" />}
+                        </div>
+                        <p className="text-[10px] text-center mt-1" style={{ color: "#5A6B84" }}>After</p>
+                      </div>
+                    </div>
+
+                    {/* Timestamped timeline */}
+                    <EventTimeline events={w.history} />
+
+                    {/* Rate & release payment card when contractor completed */}
+                    {w.status === "COMPLETED" && (
+                      <div className="mt-3 rounded-2xl p-4 text-center" style={{ background: "#FFF8E1", border: "1px solid #C6A55C" }}>
+                        <p className="text-sm font-bold" style={{ color: "#B8860B", fontFamily: "Outfit,sans-serif" }}>Work verified by Street Rep. Please review!</p>
+                        <p className="text-xs mt-1.5" style={{ color: "#5A6B84" }}>The contractor marked this issue as fixed. Confirm it is resolved and rate the work to release payment.</p>
+                        <div className="flex justify-center gap-1 my-3">
+                          {[1,2,3,4,5].map((s) => (
+                            <button key={s} onClick={() => setWoRating(s)} className="text-2xl" style={{ color: s <= woRating ? "#C6A55C" : "#D9D2C4" }}>★</button>
+                          ))}
+                        </div>
+                        <button onClick={() => resolveWorkOrder(w.id, woRating || 5)}
+                          className="w-full py-3.5 rounded-2xl text-sm font-bold text-white" style={{ background: "#0E8A5F", fontFamily: "Outfit,sans-serif" }}>
+                          Submit Rating &amp; Release Payment
+                        </button>
+                        <p className="text-xs mt-2 font-semibold underline" style={{ color: "#C0392B", cursor: "pointer" }}>Wait, there is still an issue!</p>
+                      </div>
+                    )}
+
+                    {w.status === "RESOLVED" && (
+                      <div className="mt-3 rounded-xl p-3 flex items-center gap-2" style={{ background: "#E7F4EF", border: "1px solid #0E8A5F" }}>
+                        <IconCheck size={16} color="#0E8A5F" />
+                        <p className="text-xs font-bold" style={{ color: "#0E8A5F" }}>Resolved · payment released{w.rating ? ` · you rated ${w.rating}★` : ""}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Empty state */}
             {liveReports.length === 0 && MOCK_CITIZEN_REPORTS.length === 0 && (

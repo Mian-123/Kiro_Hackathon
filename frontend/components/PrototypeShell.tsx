@@ -7,11 +7,13 @@ import StreetRepApp from "./roles/StreetRepApp";
 import DepartmentApp from "./roles/DepartmentApp";
 import MinistryApp from "./roles/MinistryApp";
 import AdminApp from "./roles/AdminApp";
+import ContractorApp from "./roles/ContractorApp";
 
 const ROLES: { id: Role; label: string; icon: string; desc: string; color: string }[] = [
   { id: "citizen",    label: "Citizen",    icon: "👤", desc: "Mobile app",     color: "#0E8A5F" },
   { id: "street-rep", label: "Street Rep", icon: "🏘️", desc: "Field mobile",   color: "#C6A55C" },
   { id: "department", label: "Department", icon: "🏛️", desc: "Dashboard",      color: "#0E2A4E" },
+  { id: "contractor", label: "Contractor", icon: "🔧", desc: "Field work",     color: "#B8860B" },
   { id: "ministry",   label: "Ministry",   icon: "🗺️", desc: "Command center", color: "#12345E" },
   { id: "admin",      label: "Admin",      icon: "⚙️", desc: "Governance",     color: "#5B2D8E" },
 ];
@@ -60,7 +62,7 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 
 export default function PrototypeShell() {
   const [activeRole, setActiveRole] = useState<Role>("citizen");
-  const isMobile = activeRole === "citizen" || activeRole === "street-rep";
+  const isMobile = activeRole === "citizen" || activeRole === "street-rep" || activeRole === "contractor";
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#081426" }}>
@@ -109,7 +111,7 @@ export default function PrototypeShell() {
       </div>
 
       {/* ── Content ── */}
-      <div className={`flex-1 flex items-start justify-center ${isMobile ? "py-8 px-4" : "py-6 px-4"}`}>
+      <div className={`flex-1 flex items-start justify-center ${isMobile ? "py-8 px-4" : "py-6 px-2"}`}>
         {activeRole === "citizen" && (
           <PhoneFrame><CitizenApp /></PhoneFrame>
         )}
@@ -117,13 +119,16 @@ export default function PrototypeShell() {
           <PhoneFrame><StreetRepApp /></PhoneFrame>
         )}
         {activeRole === "department" && (
-          <div className="w-full max-w-5xl"><DepartmentApp /></div>
+          <div className="w-full px-2"><DepartmentApp /></div>
         )}
         {activeRole === "ministry" && (
-          <div className="w-full max-w-6xl"><MinistryApp /></div>
+          <div className="w-full px-2"><MinistryApp /></div>
+        )}
+        {activeRole === "contractor" && (
+          <PhoneFrame><ContractorApp /></PhoneFrame>
         )}
         {activeRole === "admin" && (
-          <div className="w-full max-w-5xl"><AdminApp /></div>
+          <div className="w-full max-w-6xl"><AdminApp /></div>
         )}
       </div>
 

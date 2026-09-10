@@ -89,4 +89,4 @@ export const PRIORITY_CLASS: Record<PriorityBand, string> = {
   CRITICAL: "priority-critical",
 };
 
-export type Role = "citizen" | "street-rep" | "department" | "ministry" | "admin";
+export type Role = "citizen" | "street-rep" | "department" | "ministry" | "admin" | "contractor";

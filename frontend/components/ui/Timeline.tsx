@@ -136,3 +136,64 @@ export function Timeline({ status, compact = false, repVerified = false }: Timel
     </div>
   );
 }
+
+// ── Event timeline (timestamped) — used for live work-order tracking ──────────
+
+export interface TimelineEventItem {
+  key: string;
+  label: string;
+  sublabel: string;
+  at: Date;
+}
+
+function fmtEventTime(d: Date): string {
+  return d.toLocaleString("en-PK", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+const FULL_STEPS: { key: string; label: string }[] = [
+  { key: "reported",    label: "Reported" },
+  { key: "verified",    label: "Verified" },
+  { key: "work_order",  label: "Work Order" },
+  { key: "in_progress", label: "In Progress" },
+  { key: "completed",   label: "Completed" },
+  { key: "resolved",    label: "Resolved" },
+];
+
+export function EventTimeline({ events }: { events: TimelineEventItem[] }) {
+  // Map events by key for quick lookup
+  const byKey = new Map(events.map((e) => [e.key, e]));
+
+  return (
+    <div className="bg-white rounded-2xl p-5" style={{ boxShadow: "0 1px 4px rgba(10,31,60,0.07)" }}>
+      {FULL_STEPS.map((step, idx) => {
+        const done = byKey.get(step.key);
+        const isLast = idx === FULL_STEPS.length - 1;
+        return (
+          <div key={step.key} className="flex gap-4">
+            <div className="flex flex-col items-center">
+              {done ? (
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "#0E8A5F" }}>
+                  <IconCheck size={14} className="text-white" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-full flex-shrink-0" style={{ border: "2px solid #E6E3DC", background: "#F8F7F4" }} />
+              )}
+              {!isLast && (
+                <div className="w-0.5 flex-1 mt-1 mb-1" style={{ minHeight: 26, background: done ? "#0E8A5F" : "#E6E3DC" }} />
+              )}
+            </div>
+            <div className={`${isLast ? "pb-0" : "pb-5"} flex-1`}>
+              <p className="font-bold leading-tight" style={{ fontSize: 15, color: done ? "#16233A" : "#B0BAC8" }}>{step.label}</p>
+              <p className="mt-0.5" style={{ fontSize: 12, color: done ? "#5A6B84" : "#C8D0DA" }}>
+                {done ? done.sublabel : (step.key === "resolved" ? "Awaiting your sign-off" : "Pending")}
+              </p>
+              {done && (
+                <p className="mt-0.5" style={{ fontSize: 11, color: "#0E2A4E", fontWeight: 600 }}>{fmtEventTime(done.at)}</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
