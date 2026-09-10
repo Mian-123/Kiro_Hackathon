@@ -13,6 +13,10 @@ export interface MapMarker {
   address?: string;
   status?: string;
   priority?: string;
+  firstReported?: string;
+  lastReported?: string;
+  citizenReports?: number;
+  department?: string;
 }
 
 interface LiveMapProps {
@@ -96,52 +100,58 @@ function createMarkerElement(m: MapMarker): HTMLDivElement {
   return wrap;
 }
 
-// Build popup HTML showing address, issue, and status
+// Build detailed popup HTML: Location, First/Last reported, Citizen reports, Status, Department
 function buildPopupHTML(m: MapMarker): string {
   const statusKey = (m.status || "").toUpperCase();
-  const statusLabel = STATUS_LABELS[statusKey] || m.status || "";
-  const statusColor = STATUS_COLORS[statusKey] || "#5A6B84";
+  const statusLabel = STATUS_LABELS[statusKey] || m.status || "Pending Verification";
+  const statusColor = STATUS_COLORS[statusKey] || "#E0A400";
 
-  const rows: string[] = [];
+  const row = (label: string, value: string, valueColor = "#16233A") =>
+    `<div style="display:flex;justify-content:space-between;gap:12px;margin-top:5px">` +
+    `<span style="font-size:11px;color:#5A6B84">${label}</span>` +
+    `<span style="font-size:11px;font-weight:700;color:${valueColor};text-align:right">${value}</span>` +
+    `</div>`;
 
-  // Title = short code / label
-  rows.push(
-    `<div style="font-size:13px;font-weight:700;color:#16233A;font-family:Outfit,sans-serif">${m.label}</div>`
+  const parts: string[] = [];
+
+  // Title (short code)
+  parts.push(
+    `<div style="font-size:14px;font-weight:800;color:#16233A;font-family:Outfit,sans-serif;letter-spacing:0.02em">${m.label}</div>`
   );
 
-  // Issue category
-  rows.push(
-    `<div style="font-size:12px;color:#16233A;margin-top:3px;font-weight:600">${m.category}</div>`
+  // Category subtitle (uppercase, muted)
+  parts.push(
+    `<div style="font-size:11px;font-weight:700;color:#5A6B84;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px">${m.category}</div>`
   );
 
-  // Address
-  if (m.address) {
-    rows.push(
-      `<div style="font-size:11px;color:#5A6B84;margin-top:3px;display:flex;align-items:flex-start;gap:4px">` +
-      `<span style="color:#0E8A5F;font-weight:700">&#9679;</span>${m.address}</div>`
-    );
-  }
+  // Divider
+  parts.push(`<div style="height:1px;background:#E6E3DC;margin:8px 0"></div>`);
 
-  // Status chip
-  if (statusLabel) {
-    rows.push(
-      `<div style="margin-top:6px">` +
-      `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;` +
-      `background:${statusColor}22;color:${statusColor}">${statusLabel}</span>` +
-      `</div>`
-    );
-  }
+  // Detail rows
+  if (m.address)        parts.push(row("Location", m.address));
+  if (m.firstReported)  parts.push(row("First reported", m.firstReported));
+  if (m.lastReported)   parts.push(row("Last reported", m.lastReported));
+  if (m.citizenReports != null) parts.push(row("Citizen reports", String(m.citizenReports)));
 
-  // Priority chip
-  if (m.priority) {
-    rows.push(
-      `<div style="margin-top:4px">` +
-      `<span style="font-size:10px;font-weight:600;color:#5A6B84">Priority: ${m.priority}</span>` +
-      `</div>`
-    );
-  }
+  // Status row with coloured dot
+  parts.push(
+    `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:5px">` +
+    `<span style="font-size:11px;color:#5A6B84">Status</span>` +
+    `<span style="font-size:11px;font-weight:700;color:${statusColor};display:flex;align-items:center;gap:5px">` +
+    `<span style="width:9px;height:9px;border-radius:50%;background:${statusColor};display:inline-block"></span>${statusLabel}</span>` +
+    `</div>`
+  );
 
-  return `<div style="min-width:160px;padding:2px">${rows.join("")}</div>`;
+  if (m.department)     parts.push(row("Department", m.department));
+
+  // View Incident button
+  parts.push(
+    `<div style="margin-top:10px">` +
+    `<div style="text-align:center;font-size:12px;font-weight:700;color:#0A1F3C;border:1px solid #E6E3DC;border-radius:10px;padding:8px 0;cursor:pointer">[ View Incident ]</div>` +
+    `</div>`
+  );
+
+  return `<div style="min-width:210px;padding:4px 2px">${parts.join("")}</div>`;
 }
 
 export function LiveMap({

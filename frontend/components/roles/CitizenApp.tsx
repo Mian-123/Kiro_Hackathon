@@ -16,7 +16,7 @@ import {
   MOCK_ANNOUNCEMENTS, LAHORE_INCIDENT_MARKERS,
 } from "@/lib/mock-data";
 import { useAppState } from "@/lib/app-state";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, formatDateTime } from "@/lib/utils";
 import type { StatusType } from "@/lib/utils";
 
 type View = "home" | "map" | "my-reports" | "alerts" | "profile" | "wizard" | "incident-detail" | "verify";
@@ -34,7 +34,7 @@ function liveStatusToType(s: "SUBMITTED" | "VERIFIED" | "REJECTED"): StatusType 
 }
 
 export default function CitizenApp() {
-  const { liveReports, addReport, workOrders, resolveWorkOrder } = useAppState();
+  const { liveReports, addReport, workOrders, resolveWorkOrder, deleteReport } = useAppState();
 
   const [view, setView]                     = useState<View>("home");
   const [selectedIncidentId, setSelectedId] = useState<string | null>(null);
@@ -51,6 +51,7 @@ export default function CitizenApp() {
   const [rejectReason, setRejectReason]     = useState("");
   const [verifyDone, setVerifyDone]         = useState(false);
   const [woRating, setWoRating] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const geo = useGeolocation();
 
@@ -98,6 +99,7 @@ export default function CitizenApp() {
       latitude: lat ?? undefined,
       longitude: lng ?? undefined,
       hasPhoto: !!wizardImageFile,
+      photoDataUrl: wizardImagePreview ?? undefined,
     });
     setNewReportId(id);
     setSubmitted(true);
@@ -240,6 +242,7 @@ export default function CitizenApp() {
                         {"repVerified" in r && r.repVerified && r.status === "SUBMITTED" && (
                           <span className="text-[10px] ml-2 font-semibold" style={{ color: "#0E8A5F" }}>✓ Rep verified</span>
                         )}
+                        <p className="text-[10px] mt-1.5" style={{ color: "#5A6B84" }}>Reported {formatDateTime(r.submittedAt)}</p>
                       </div>
                     </button>
                   ))}
@@ -398,7 +401,7 @@ export default function CitizenApp() {
                   <div key={r.id} className="bg-white rounded-2xl border p-4 mb-2" style={{ borderColor: "#0E8A5F", borderLeftWidth: 4, boxShadow: "0 1px 3px rgba(10,31,60,0.07)" }}>
                     <div className="flex items-start gap-3">
                       <CategoryBadge category={r.category} size="lg" />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <p className="text-sm font-bold" style={{ color: "#16233A" }}>{r.category}</p>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "#EAF0FA", color: "#0E2A4E" }}>{r.shortCode}</span>
@@ -410,6 +413,28 @@ export default function CitizenApp() {
                             <span className="text-[10px] font-bold" style={{ color: "#0E8A5F" }}>✓ Verified by Rep</span>
                           )}
                         </div>
+                        <p className="text-[10px] mt-1.5" style={{ color: "#5A6B84" }}>Reported {formatDateTime(r.submittedAt)}</p>
+
+                        {/* Delete action */}
+                        {confirmDeleteId === r.id ? (
+                          <div className="mt-3 rounded-xl p-3" style={{ background: "#FEF0EE", border: "1px solid #F3C0BA" }}>
+                            <p className="text-xs font-semibold mb-2" style={{ color: "#C0392B" }}>Delete this report permanently?</p>
+                            <p className="text-[11px] mb-2.5" style={{ color: "#5A6B84" }}>It will be removed for the Street Rep, Department and everyone else.</p>
+                            <div className="flex gap-2">
+                              <button onClick={() => { deleteReport(r.id); setConfirmDeleteId(null); }}
+                                className="flex-1 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "#C0392B" }}>Yes, delete</button>
+                              <button onClick={() => setConfirmDeleteId(null)}
+                                className="flex-1 py-2 rounded-lg text-xs font-semibold" style={{ background: "white", color: "#5A6B84", border: "1px solid #E6E3DC" }}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmDeleteId(r.id)}
+                            className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg"
+                            style={{ background: "#FEF0EE", color: "#C0392B" }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            Delete report
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -687,27 +712,42 @@ export default function CitizenApp() {
           </div>
         )}
 
-        {/* ══ WIZARD CONFIRMATION ═══════════════════════════════════════════ */}
-        {view === "wizard" && submitted && (
-          <div className="px-4 py-8 flex flex-col items-center text-center" style={{ background: "#F5F3EF" }}>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4" style={{ background: "#E7F4EF" }}>
-              <IconCheck size={32} color="#0E8A5F" />
+        {/* ══ WIZARD CONFIRMATION — "Report received" ═══════════════════════ */}
+        {view === "wizard" && submitted && (() => {
+          const submittedReport = newReportId ? liveReports.find((r) => r.id === newReportId) : null;
+          const code = submittedReport?.shortCode || "LHR-NEW";
+          const addr = submittedReport?.address || submittedReport?.street || "Location pending";
+          return (
+            <div className="px-6 py-10 flex flex-col items-center text-center" style={{ background: "#F5F3EF", minHeight: 700 }}>
+              <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6" style={{ background: "#E7F4EF" }}>
+                <IconCheck size={44} color="#0E8A5F" />
+              </div>
+              <p className="text-2xl font-bold" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Report received</p>
+
+              <div className="mt-3 space-y-1">
+                <p className="text-sm" style={{ color: "#5A6B84" }}>Complaint number <span className="font-bold" style={{ color: "#0A1F3C" }}>{code}</span></p>
+                <p className="text-sm" style={{ color: "#5A6B84" }}>Expected resolution: <span className="font-semibold" style={{ color: "#16233A" }}>within 5 days</span></p>
+                <p className="text-sm" style={{ color: "#5A6B84" }}>Your Street Rep will verify within 24 hours</p>
+              </div>
+
+              <div className="mt-6 w-full rounded-xl px-4 py-2.5 flex items-center gap-2" style={{ background: "#E7F4EF" }}>
+                <IconMapPin size={14} color="#0E8A5F" />
+                <p className="text-xs font-medium" style={{ color: "#0E8A5F" }}>Reported at: {addr}</p>
+              </div>
+
+              <button onClick={() => { setView("my-reports"); resetWizard(); }}
+                className="w-full mt-6 py-4 rounded-2xl text-base font-bold text-white"
+                style={{ background: "#0E8A5F", fontFamily: "Outfit,sans-serif", boxShadow: "0 6px 20px rgba(14,138,95,0.4)" }}>
+                Track my reports
+              </button>
+              <button onClick={() => { setView("home"); resetWizard(); }}
+                className="w-full mt-3 py-4 rounded-2xl text-base font-bold"
+                style={{ background: "white", color: "#16233A", border: "1px solid #E6E3DC" }}>
+                Home
+              </button>
             </div>
-            <p className="text-lg font-bold" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Report Submitted!</p>
-            <p className="text-sm mt-1" style={{ color: "#5A6B84" }}>Sent to your Street Rep for verification</p>
-            <div className="mt-4 bg-white rounded-2xl border px-6 py-4 w-full" style={{ borderColor: "#E6E3DC" }}>
-              <p className="text-xs" style={{ color: "#5A6B84" }}>Report ID</p>
-              <p className="text-base font-bold mt-0.5 font-mono" style={{ color: "#0A1F3C" }}>{newReportId ? liveReports.find(r => r.id === newReportId)?.shortCode : "LHR-NEW"}</p>
-              <div className="mt-2"><StatusChip status="SUBMITTED" size="md" /></div>
-            </div>
-            <div className="w-full mt-4">
-              <Timeline status="SUBMITTED" repVerified={false} />
-            </div>
-            <p className="text-xs mt-3" style={{ color: "#5A6B84" }}>Your Street Rep will verify this within 24 hrs. You will be notified.</p>
-            <Button variant="primary" size="lg" className="w-full mt-4" onClick={() => { setView("my-reports"); resetWizard(); }}>View My Reports</Button>
-            <Button variant="ghost" size="md" className="w-full mt-2" onClick={() => { setView("home"); resetWizard(); }}>Back to Home</Button>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ══ INCIDENT DETAIL ═══════════════════════════════════════════════ */}
         {view === "incident-detail" && selectedIncident && (

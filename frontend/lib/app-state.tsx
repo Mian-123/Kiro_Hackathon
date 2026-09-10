@@ -15,6 +15,7 @@ export interface LiveReport {
   longitude?: number;
   hasPhoto: boolean;
   photoDataUrl?: string;        // citizen-uploaded photo (object URL / data URL)
+  repPhotoDataUrl?: string;     // street rep ground-verification photo
   submittedAt: Date;
   status: "SUBMITTED" | "VERIFIED" | "REJECTED";
   repVerified: boolean;
@@ -54,6 +55,9 @@ export interface WorkOrder {
   cost?: number;                // PKR
   rating?: number;              // 1-5 citizen rating
   disputeReason?: string;
+  citizenReportId?: string;     // links back to the originating live report
+  reportedAt?: Date;            // when citizen first submitted
+  verifiedAt?: Date;            // when street rep verified
   status: WorkOrderStatus;
   createdAt: Date;
   history: TimelineEvent[];     // timestamped lifecycle
@@ -63,8 +67,9 @@ interface AppState {
   // reports
   liveReports: LiveReport[];
   addReport: (r: Omit<LiveReport, "id" | "submittedAt" | "status" | "repVerified">) => string;
-  verifyReport: (id: string) => void;
+  verifyReport: (id: string, repPhotoDataUrl?: string) => void;
   rejectReport: (id: string) => void;
+  deleteReport: (id: string) => void;
 
   // work orders
   workOrders: WorkOrder[];
@@ -107,9 +112,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     return id;
   }, []);
 
-  const verifyReport = useCallback((id: string) => {
+  const verifyReport = useCallback((id: string, repPhotoDataUrl?: string) => {
     setLiveReports((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "VERIFIED", repVerified: true } : r))
+      prev.map((r) => (r.id === id ? { ...r, status: "VERIFIED", repVerified: true, repPhotoDataUrl } : r))
     );
   }, []);
 
@@ -117,6 +122,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     setLiveReports((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "REJECTED" } : r))
     );
+  }, []);
+
+  const deleteReport = useCallback((id: string) => {
+    setLiveReports((prev) => prev.filter((r) => r.id !== id));
+    // also drop any work order spawned from this report so it disappears everywhere
+    setWorkOrders((prev) => prev.filter((w) => w.citizenReportId !== id));
   }, []);
 
   // ── Work orders ──────────────────────────────────────────────────────────────
@@ -132,9 +143,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     repPhotoUrl?: string;
     contractor: string;
     cost?: number;
+    citizenReportId?: string;
+    reportedAt?: Date;
+    verifiedAt?: Date;
   }) => {
     const id = `wo-${Date.now()}`;
     const now = new Date();
+    const reportedAt = w.reportedAt ?? now;
+    const verifiedAt = w.verifiedAt ?? now;
     setWorkOrders((prev) => [
       {
         id,
@@ -148,11 +164,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         repPhotoUrl: w.repPhotoUrl,
         contractor: w.contractor,
         cost: w.cost,
+        citizenReportId: w.citizenReportId,
+        reportedAt,
+        verifiedAt,
         status: "ASSIGNED",
         createdAt: now,
         history: [
-          { key: "reported",   label: "Reported",   sublabel: "Citizen submitted",        at: now },
-          { key: "verified",   label: "Verified",   sublabel: "Street Rep verified",      at: now },
+          { key: "reported",   label: "Reported",   sublabel: "Citizen submitted",           at: reportedAt },
+          { key: "verified",   label: "Verified",   sublabel: "Street Rep verified",         at: verifiedAt },
           { key: "work_order", label: "Work Order", sublabel: `Assigned to ${w.contractor}`, at: now },
         ],
       },
@@ -204,7 +223,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        liveReports, addReport, verifyReport, rejectReport,
+        liveReports, addReport, verifyReport, rejectReport, deleteReport,
         workOrders, createWorkOrder, startWork, completeWork, resolveWorkOrder, disputeWorkOrder,
       }}
     >

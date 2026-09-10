@@ -9,13 +9,13 @@ import MinistryApp from "./roles/MinistryApp";
 import AdminApp from "./roles/AdminApp";
 import ContractorApp from "./roles/ContractorApp";
 
-const ROLES: { id: Role; label: string; icon: string; desc: string; color: string }[] = [
-  { id: "citizen",    label: "Citizen",    icon: "👤", desc: "Mobile app",     color: "#0E8A5F" },
-  { id: "street-rep", label: "Street Rep", icon: "🏘️", desc: "Field mobile",   color: "#C6A55C" },
-  { id: "department", label: "Department", icon: "🏛️", desc: "Dashboard",      color: "#0E2A4E" },
-  { id: "contractor", label: "Contractor", icon: "🔧", desc: "Field work",     color: "#B8860B" },
-  { id: "ministry",   label: "Ministry",   icon: "🗺️", desc: "Command center", color: "#12345E" },
-  { id: "admin",      label: "Admin",      icon: "⚙️", desc: "Governance",     color: "#5B2D8E" },
+const ROLES: { id: Role; label: string; desc: string; color: string }[] = [
+  { id: "citizen",    label: "Citizen",     desc: "Mobile app",      color: "#0E8A5F" },
+  { id: "street-rep", label: "Street Rep",  desc: "Mobile app",      color: "#0E8A5F" },
+  { id: "department", label: "UC Officer",  desc: "Operations",      color: "#0E8A5F" },
+  { id: "contractor", label: "Contractor",  desc: "Mobile portal",   color: "#0E8A5F" },
+  { id: "ministry",   label: "Mayor / Ops", desc: "Command center",  color: "#0E8A5F" },
+  { id: "admin",      label: "Admin",       desc: "Governance",      color: "#0E8A5F" },
 ];
 
 /** Phone bezel wrapper — renders children inside a realistic phone shape */
@@ -77,31 +77,33 @@ export default function PrototypeShell() {
             <span className="text-white font-bold text-sm" style={{ fontFamily: "Outfit,sans-serif" }}>CP</span>
           </div>
           <div>
-            <h1 className="text-white font-bold text-sm" style={{ fontFamily: "Outfit,sans-serif" }}>CivicPulse Lahore</h1>
-            <p className="text-[11px]" style={{ color: "#5A6B84" }}>See it · Report it · Verify it · Resolve it</p>
+            <h1 className="text-white font-bold text-sm" style={{ fontFamily: "Outfit,sans-serif", letterSpacing: "0.01em" }}>CivicPulse Lahore</h1>
+            <p className="text-[10px] font-semibold tracking-wider" style={{ color: "#5A6B84" }}>GOVERNANCE PLATFORM PROTOTYPE</p>
           </div>
         </div>
 
-        {/* Role switcher */}
-        <div className="flex gap-1 rounded-xl p-1" style={{ background: "#081426" }}>
-          {ROLES.map((role) => (
-            <button
-              key={role.id}
-              onClick={() => setActiveRole(role.id)}
-              aria-pressed={activeRole === role.id}
-              className="px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5"
-              style={{
-                background: activeRole === role.id ? role.color : "transparent",
-                color: activeRole === role.id ? "#fff" : "#5A6B84",
-              }}
-              onMouseEnter={(e) => { if (activeRole !== role.id) { const b = e.currentTarget as HTMLElement; b.style.color="#fff"; b.style.background="#12345E"; }}}
-              onMouseLeave={(e) => { if (activeRole !== role.id) { const b = e.currentTarget as HTMLElement; b.style.color="#5A6B84"; b.style.background="transparent"; }}}
-            >
-              <span aria-hidden>{role.icon}</span>
-              <span className="hidden sm:inline">{role.label}</span>
-              <span className="hidden xl:inline text-[10px] opacity-60" style={{ marginLeft: 2 }}>· {role.desc}</span>
-            </button>
-          ))}
+        {/* Role switcher — pill tabs with subtitle */}
+        <div className="flex gap-1.5 items-center">
+          {ROLES.map((role) => {
+            const active = activeRole === role.id;
+            return (
+              <button
+                key={role.id}
+                onClick={() => setActiveRole(role.id)}
+                aria-pressed={active}
+                className="rounded-full px-4 py-1.5 text-center transition-all duration-150"
+                style={{
+                  background: active ? "linear-gradient(135deg,#0E8A5F,#12A874)" : "transparent",
+                  boxShadow: active ? "0 4px 14px rgba(14,138,95,0.4)" : "none",
+                }}
+                onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#12345E"; }}
+                onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                <span className="block text-xs font-bold leading-tight" style={{ color: active ? "#fff" : "#C8D0DA" }}>{role.label}</span>
+                <span className="hidden lg:block text-[9px] leading-tight" style={{ color: active ? "rgba(255,255,255,0.8)" : "#5A6B84" }}>{role.desc}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="hidden lg:flex items-center gap-2">

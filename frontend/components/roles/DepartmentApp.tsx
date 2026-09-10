@@ -10,7 +10,7 @@ import {
   MOCK_INCIDENTS, MOCK_UC_STATS, MOCK_COMPLAINT_QUEUE,
   MOCK_STREET_RANKINGS, MOCK_REP_PERFORMANCE,
   MOCK_DUPLICATE_REPORTS, MOCK_DUPLICATE_SIGNALS,
-  LAHORE_INCIDENT_MARKERS,
+  LAHORE_INCIDENT_MARKERS, MOCK_CONTRACTORS,
 } from "@/lib/mock-data";
 import { useAppState } from "@/lib/app-state";
 import { formatDate } from "@/lib/utils";
@@ -27,6 +27,7 @@ const NAV = [
 ];
 
 const CONTRACTORS = ["Al-Jalil Builders", "Metro Contractors", "Lahore Infra Co"];
+// contractor cards are sourced from MOCK_CONTRACTORS; CONTRACTORS[0] is the default selection
 
 // white card style
 const CARD = { background: "#FFFFFF", border: "1px solid #E6E3DC", boxShadow: "0 1px 4px rgba(10,31,60,0.08)" };
@@ -195,7 +196,7 @@ export default function DepartmentApp() {
       {/* ── Top bar (dark for contrast) ── */}
       <div className="px-6 py-4 flex items-center justify-between" style={{ background: "#0A1F3C" }}>
         <div>
-          <p className="text-white font-bold text-base" style={{ fontFamily: "Outfit,sans-serif" }}>UC-14 Operations · Gulberg Town</p>
+          <p className="text-white font-bold text-base" style={{ fontFamily: "Outfit,sans-serif" }}>UCO Dashboard · UC-14 Gulberg Town</p>
           <p className="text-xs" style={{ color: "#8A99B0" }}>Officer: Kamran Sheikh · Union Council dashboard · District East</p>
         </div>
         <div className="flex items-center gap-3">
@@ -728,13 +729,31 @@ export default function DepartmentApp() {
                 </div>
               </div>
 
-              {/* Contractor + cost */}
+              {/* Contractor selection cards */}
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "#5A6B84" }}>Assign Contractor</p>
-                <select value={woContractor} onChange={(e) => setWoContractor(e.target.value)}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ border: "1.5px solid #E6E3DC", color: "#16233A" }}>
-                  {CONTRACTORS.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <div className="space-y-2">
+                  {MOCK_CONTRACTORS.map((c) => {
+                    const selected = woContractor === c.name;
+                    return (
+                      <button key={c.id} onClick={() => setWoContractor(c.name)}
+                        className="w-full text-left rounded-xl p-3 flex items-center gap-3 transition-all"
+                        style={{ border: `1.5px solid ${selected ? "#0E8A5F" : "#E6E3DC"}`, background: selected ? "#E7F4EF" : "#FFFFFF" }}>
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                          style={{ background: selected ? "#0E8A5F" : "#EAF0FA", color: selected ? "white" : "#0E2A4E" }}>{c.avatarInitials}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold" style={{ color: "#16233A" }}>{c.name}</p>
+                            <span className="text-[11px] font-semibold" style={{ color: "#C6A55C" }}>★ {c.rating}</span>
+                          </div>
+                          <p className="text-[11px]" style={{ color: "#5A6B84" }}>{c.specialty}</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: "#5A6B84" }}>{c.completedJobs} completed · {c.pendingJobs} pending</p>
+                        </div>
+                        {selected && <span className="text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0" style={{ background: "#0E8A5F", color: "white" }}>Selected</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "#5A6B84" }}>Budget (PKR)</p>

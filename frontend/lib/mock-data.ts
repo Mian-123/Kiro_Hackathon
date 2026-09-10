@@ -2,22 +2,21 @@ import { StatusType, PriorityBand } from "./utils";
 
 // ── Lahore area coordinates (used by LiveMap markers) ─────────────────────────
 export const LAHORE_INCIDENT_MARKERS = [
-  { id: "inc-001", lng: 74.3461, lat: 31.5134, color: "#C0392B", label: "INC-LHR-001 · CRITICAL", category: "Sewerage / Water" },
-  { id: "inc-002", lng: 74.3392, lat: 31.5198, color: "#C6A55C", label: "INC-LHR-002 · HIGH",     category: "Broken Road" },
-  { id: "inc-003", lng: 74.3650, lat: 31.5260, color: "#E0A400", label: "INC-LHR-003 · MEDIUM",   category: "Garbage / Waste" },
-  { id: "inc-004", lng: 74.3720, lat: 31.5080, color: "#0E8A5F", label: "INC-LHR-004 · RESOLVED", category: "Garbage / Waste" },
-  { id: "inc-005", lng: 74.3530, lat: 31.5310, color: "#C0392B", label: "INC-LHR-005 · CRITICAL", category: "Flooding / Standing Water" },
-  { id: "inc-006", lng: 74.3810, lat: 31.5170, color: "#C6A55C", label: "INC-LHR-006 · HIGH",     category: "Streetlight" },
-  { id: "inc-007", lng: 74.3290, lat: 31.5230, color: "#0E8A5F", label: "INC-LHR-007 · RESOLVED", category: "Broken Road" },
-  // Additional markers
-  { id: "inc-008", lng: 74.3580, lat: 31.5050, color: "#C0392B", label: "INC-LHR-008 · CRITICAL", category: "Safety Hazard" },
-  { id: "inc-009", lng: 74.3480, lat: 31.5380, color: "#E0A400", label: "INC-LHR-009 · MEDIUM",   category: "Drainage" },
-  { id: "inc-010", lng: 74.3750, lat: 31.5290, color: "#C6A55C", label: "INC-LHR-010 · HIGH",     category: "Broken Road" },
-  { id: "inc-011", lng: 74.3330, lat: 31.5100, color: "#E0A400", label: "INC-LHR-011 · MEDIUM",   category: "Encroachment" },
-  { id: "inc-012", lng: 74.3620, lat: 31.5420, color: "#0E8A5F", label: "INC-LHR-012 · RESOLVED", category: "Streetlight" },
-  { id: "inc-013", lng: 74.3900, lat: 31.5220, color: "#C0392B", label: "INC-LHR-013 · CRITICAL", category: "Flooding / Standing Water" },
-  { id: "inc-014", lng: 74.3250, lat: 31.5300, color: "#E0A400", label: "INC-LHR-014 · MEDIUM",   category: "Infrastructure" },
-  { id: "inc-015", lng: 74.3700, lat: 31.5150, color: "#C6A55C", label: "INC-LHR-015 · HIGH",     category: "Sewerage / Water" },
+  { id: "inc-001", lng: 74.3461, lat: 31.5134, color: "#C0392B", label: "INC-LHR-001", category: "Sewerage / Water",          address: "Gulberg III",       status: "AWAITING_CITIZEN_VERIFICATION", priority: "Critical", firstReported: "Aug 22, 10:30 PM", lastReported: "Aug 22, 11:15 PM", citizenReports: 4, department: "WASA" },
+  { id: "inc-002", lng: 74.3392, lat: 31.5198, color: "#C6A55C", label: "INC-LHR-002", category: "Broken Road",               address: "Canal Bank Road",   status: "IN_PROGRESS",                   priority: "High",     firstReported: "Aug 21, 09:10 AM", lastReported: "Aug 22, 02:40 PM", citizenReports: 7, department: "LDA Roads" },
+  { id: "inc-003", lng: 74.3650, lat: 31.5260, color: "#E0A400", label: "INC-LHR-003", category: "Garbage / Waste",           address: "Johar Town",        status: "ASSIGNED",                      priority: "Medium",   firstReported: "Aug 22, 08:00 AM", lastReported: "Aug 22, 12:30 PM", citizenReports: 6, department: "LWMC" },
+  { id: "inc-004", lng: 74.3720, lat: 31.5080, color: "#0E8A5F", label: "INC-LHR-004", category: "Garbage / Waste",           address: "Model Town",        status: "RESOLVED",                      priority: "Low",      firstReported: "Aug 12, 07:20 AM", lastReported: "Aug 12, 07:20 AM", citizenReports: 1, department: "LWMC" },
+  { id: "inc-005", lng: 74.3530, lat: 31.5310, color: "#C0392B", label: "INC-LHR-005", category: "Flooding / Standing Water", address: "Ferozepur Road",    status: "REOPENED",                      priority: "Critical", firstReported: "Aug 14, 06:45 PM", lastReported: "Aug 22, 09:05 AM", citizenReports: 9, department: "WASA" },
+  { id: "inc-006", lng: 74.3810, lat: 31.5170, color: "#C6A55C", label: "INC-LHR-006", category: "Streetlight",               address: "DHA Phase 5",       status: "ASSIGNED",                      priority: "High",     firstReported: "Aug 20, 08:15 PM", lastReported: "Aug 21, 08:15 PM", citizenReports: 3, department: "LESCO" },
+  { id: "inc-007", lng: 74.3290, lat: 31.5230, color: "#0E8A5F", label: "INC-LHR-007", category: "Broken Road",               address: "Iqbal Town",        status: "RESOLVED",                      priority: "Low",      firstReported: "Aug 10, 11:00 AM", lastReported: "Aug 10, 11:00 AM", citizenReports: 2, department: "LDA Roads" },
+  { id: "inc-008", lng: 74.3580, lat: 31.5050, color: "#C0392B", label: "INC-LHR-008", category: "Safety Hazard",             address: "Ichhra",            status: "IN_PROGRESS",                   priority: "Critical", firstReported: "Aug 22, 07:30 AM", lastReported: "Aug 22, 10:00 AM", citizenReports: 5, department: "LMC" },
+  { id: "inc-009", lng: 74.3480, lat: 31.5380, color: "#E0A400", label: "INC-LHR-009", category: "Drainage",                  address: "Shadman",           status: "ASSIGNED",                      priority: "Medium",   firstReported: "Aug 21, 05:20 PM", lastReported: "Aug 22, 08:40 AM", citizenReports: 4, department: "WASA" },
+  { id: "inc-010", lng: 74.3750, lat: 31.5290, color: "#C6A55C", label: "INC-LHR-010", category: "Broken Road",               address: "Garden Town",       status: "IN_PROGRESS",                   priority: "High",     firstReported: "Aug 19, 03:10 PM", lastReported: "Aug 22, 01:00 PM", citizenReports: 6, department: "LDA Roads" },
+  { id: "inc-011", lng: 74.3330, lat: 31.5100, color: "#E0A400", label: "INC-LHR-011", category: "Encroachment",              address: "Samanabad",         status: "SUBMITTED",                     priority: "Medium",   firstReported: "Aug 22, 09:45 AM", lastReported: "Aug 22, 09:45 AM", citizenReports: 2, department: "LMC" },
+  { id: "inc-012", lng: 74.3620, lat: 31.5420, color: "#0E8A5F", label: "INC-LHR-012", category: "Streetlight",               address: "Faisal Town",       status: "RESOLVED",                      priority: "Low",      firstReported: "Aug 09, 08:30 PM", lastReported: "Aug 09, 08:30 PM", citizenReports: 1, department: "LESCO" },
+  { id: "inc-013", lng: 74.3900, lat: 31.5220, color: "#C0392B", label: "INC-LHR-013", category: "Flooding / Standing Water", address: "Mughalpura",        status: "AWAITING_CITIZEN_VERIFICATION", priority: "Critical", firstReported: "Aug 20, 11:20 PM", lastReported: "Aug 22, 06:10 AM", citizenReports: 8, department: "WASA" },
+  { id: "inc-014", lng: 74.3250, lat: 31.5300, color: "#E0A400", label: "INC-LHR-014", category: "Infrastructure",            address: "Sanda",             status: "ASSIGNED",                      priority: "Medium",   firstReported: "Aug 21, 10:05 AM", lastReported: "Aug 22, 09:00 AM", citizenReports: 3, department: "LDA Roads" },
+  { id: "inc-015", lng: 74.3700, lat: 31.5150, color: "#C6A55C", label: "INC-LHR-015", category: "Sewerage / Water",          address: "Muslim Town",       status: "IN_PROGRESS",                   priority: "High",     firstReported: "Aug 20, 04:50 PM", lastReported: "Aug 22, 11:30 AM", citizenReports: 5, department: "WASA" },
 ];
 
 export interface MockReport {
@@ -462,3 +461,20 @@ export const MOCK_MINISTRY_STATS = {
     { date: "Aug 21", created:  6, resolved:  7 },
   ],
 };
+
+// ── Contractors (for work-order assignment) ───────────────────────────────────
+export interface MockContractor {
+  id: string;
+  name: string;
+  specialty: string;
+  rating: number;        // 1-5
+  completedJobs: number;
+  pendingJobs: number;
+  avatarInitials: string;
+}
+
+export const MOCK_CONTRACTORS: MockContractor[] = [
+  { id: "con-001", name: "Al-Jalil Builders",  specialty: "Roads & Infrastructure", rating: 4.7, completedJobs: 142, pendingJobs: 3, avatarInitials: "AJ" },
+  { id: "con-002", name: "Metro Contractors",  specialty: "Water & Sewerage",       rating: 4.4, completedJobs: 98,  pendingJobs: 5, avatarInitials: "MC" },
+  { id: "con-003", name: "Lahore Infra Co",    specialty: "General Civil Works",    rating: 4.1, completedJobs: 76,  pendingJobs: 2, avatarInitials: "LI" },
+];

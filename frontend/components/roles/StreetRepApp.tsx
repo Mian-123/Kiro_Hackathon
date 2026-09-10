@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { PriorityBadge } from "@/components/ui/PriorityBadge";
 import { Timeline } from "@/components/ui/Timeline";
@@ -30,6 +30,8 @@ export default function StreetRepApp() {
   const [fieldNote, setFieldNote]           = useState("");
   const [fieldRef, setFieldRef]             = useState("");
   const [fieldImage, setFieldImage]         = useState(false);
+  const [repVerifyPhoto, setRepVerifyPhoto] = useState<string | null>(null);
+  const repPhotoInputRef = useRef<HTMLInputElement>(null);
   const [fieldDone, setFieldDone]           = useState(false);
   const [replyText, setReplyText]           = useState("");
   const [replyMsgId, setReplyMsgId]         = useState<string|null>(null);
@@ -40,7 +42,7 @@ export default function StreetRepApp() {
   // Combine live submitted reports + static pending
   const livePending = liveReports
     .filter((r) => r.status === "SUBMITTED")
-    .map((r) => ({ id: r.id, shortCode: r.shortCode, category: r.category, description: r.description, street: r.street, address: r.address, latitude: r.latitude, longitude: r.longitude, submittedAt: r.submittedAt, hasPhoto: r.hasPhoto, isLive: true as const }));
+    .map((r) => ({ id: r.id, shortCode: r.shortCode, category: r.category, description: r.description, street: r.street, address: r.address, latitude: r.latitude, longitude: r.longitude, submittedAt: r.submittedAt, hasPhoto: r.hasPhoto, photoDataUrl: r.photoDataUrl, isLive: true as const }));
 
   const staticPending = MOCK_REP_PENDING_REPORTS
     .filter((r) => !verifiedIds.includes(r.id) && !rejectedIds.includes(r.id) && !mergedIds.includes(r.id))
@@ -199,9 +201,13 @@ export default function StreetRepApp() {
             <p className="text-xl font-bold mb-0.5" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Verify report</p>
             <p className="text-sm mb-4" style={{ color: "#5A6B84" }}>{pendingReports.length} waiting · verify within 24 hrs</p>
 
-            {/* Photo area — dark, with camera placeholder */}
-            <div className="rounded-2xl mb-4 overflow-hidden" style={{ background: "#0A1F3C", height: "200px" }}>
-              {selectedReport.hasPhoto ? (
+            {/* Citizen-uploaded photo */}
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "#5A6B84" }}>Citizen Photo</p>
+            <div className="rounded-2xl mb-4 overflow-hidden flex items-center justify-center" style={{ background: "#0A1F3C", height: "200px" }}>
+              {("photoDataUrl" in selectedReport && selectedReport.photoDataUrl) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedReport.photoDataUrl as string} alt="Citizen report" className="w-full h-full object-cover" />
+              ) : selectedReport.hasPhoto ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <IconCheck size={40} color="#0E8A5F" />
                 </div>
@@ -211,12 +217,29 @@ export default function StreetRepApp() {
                     <IconCamera size={24} color="rgba(255,255,255,0.5)" />
                   </div>
                   <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>No photo attached</p>
-                  <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}>
-                    Citizen photo · not provided
-                  </span>
+                  <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)" }}>Citizen photo · not provided</span>
                 </div>
               )}
             </div>
+
+            {/* Rep ground-verification photo */}
+            <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: "#5A6B84" }}>Your Verification Photo (on ground)</p>
+            <input ref={repPhotoInputRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setRepVerifyPhoto(URL.createObjectURL(f)); }} />
+            {!repVerifyPhoto ? (
+              <button onClick={() => repPhotoInputRef.current?.click()}
+                className="w-full border-2 border-dashed rounded-2xl py-8 flex flex-col items-center gap-2 mb-4 bg-white" style={{ borderColor: "#E6E3DC" }}>
+                <IconCamera size={24} color="#0E8A5F" />
+                <p className="text-sm font-semibold" style={{ color: "#0E8A5F" }}>Take / upload ground photo</p>
+                <p className="text-[11px]" style={{ color: "#5A6B84" }}>Confirm the issue exists on site</p>
+              </button>
+            ) : (
+              <div className="relative mb-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={repVerifyPhoto} alt="Ground verification" className="w-full h-44 object-cover rounded-2xl" />
+                <button onClick={() => setRepVerifyPhoto(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full text-white text-xs font-bold" style={{ background: "#C0392B" }}>✕</button>
+              </div>
+            )}
 
             {/* Report info card */}
             <div className="bg-white rounded-2xl p-4 mb-4" style={{ boxShadow: "0 1px 4px rgba(10,31,60,0.08)", border: "1px solid #F0EDE6" }}>
@@ -256,16 +279,18 @@ export default function StreetRepApp() {
             <button
               onClick={() => {
                 if (selectedReport && "isLive" in selectedReport && selectedReport.isLive) {
-                  verifyLiveReport(selectedReport.id);
+                  verifyLiveReport(selectedReport.id, repVerifyPhoto || undefined);
                 } else {
                   setVerifiedIds((p) => [...p, selectedReport!.id]);
                 }
+                setRepVerifyPhoto(null);
                 setView("verify-list");
               }}
-              className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 mb-3 text-sm font-bold text-white"
+              disabled={!repVerifyPhoto}
+              className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 mb-3 text-sm font-bold text-white disabled:opacity-40"
               style={{ background: "#0E8A5F" }}>
-              <IconCamera size={16} className="text-white" />
-              Confirm on ground (take photo)
+              <IconCheck size={16} className="text-white" />
+              {repVerifyPhoto ? "Confirm Verification" : "Add ground photo to confirm"}
             </button>
 
             <div className="flex gap-3">
@@ -301,41 +326,72 @@ export default function StreetRepApp() {
             <button onClick={() => setView("home")} className="flex items-center gap-1 text-xs mb-1 font-medium" style={{ color: "#5A6B84" }}>
               <IconArrowLeft size={12} /> My Streets
             </button>
-            <p className="text-xl font-bold mb-0.5" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Verify Completed Work</p>
-            <p className="text-sm mb-4" style={{ color: "#5A6B84" }}>Review contractor work before citizen sign-off</p>
+            <p className="text-xl font-bold mb-4" style={{ color: "#16233A", fontFamily: "Outfit,sans-serif" }}>Verify completed work</p>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {workOrders.filter((w) => w.status === "COMPLETED").map((w) => (
-                <div key={w.id} className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 4px rgba(10,31,60,0.08)", border: "1px solid #F0EDE6" }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <CategoryBadge category={w.category} size="lg" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold" style={{ color: "#16233A" }}>{w.category}</p>
-                      <p className="text-[11px]" style={{ color: "#5A6B84" }}>{w.address}</p>
-                      <p className="text-[10px]" style={{ color: "#5A6B84" }}>Contractor: {w.contractor}</p>
+                <div key={w.id}>
+                  {/* Job header card */}
+                  <div className="bg-white rounded-2xl p-4 mb-3" style={{ boxShadow: "0 1px 4px rgba(10,31,60,0.08)" }}>
+                    <div className="flex items-center gap-3">
+                      <CategoryBadge category={w.category} size="lg" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold" style={{ color: "#16233A" }}>{w.category} repair</p>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "#EAF0FA", color: "#0E2A4E" }}>{w.shortCode}</span>
+                        </div>
+                        <p className="text-[11px] mt-0.5" style={{ color: "#5A6B84" }}>{w.contractor} marked complete · {w.address}</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* After photo */}
-                  <div className="rounded-xl h-36 mb-3 overflow-hidden flex items-center justify-center" style={{ background: "#E7F4EF", border: "1px solid #0E8A5F" }}>
-                    {w.contractorPhotoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={w.contractorPhotoUrl} alt="Completed work" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-center"><IconCheck size={28} color="#0E8A5F" /><p className="text-xs mt-1" style={{ color: "#0E8A5F" }}>Completion photo</p></div>
-                    )}
+                  {/* Before / After photos */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="relative rounded-xl overflow-hidden h-28" style={{ background: "#0A1F3C" }}>
+                      {w.citizenPhotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={w.citizenPhotoUrl} alt="Before" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center"><IconCamera size={22} color="rgba(255,255,255,0.4)" /></div>
+                      )}
+                      <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "rgba(10,31,60,0.85)", color: "white" }}>Before</span>
+                    </div>
+                    <div className="relative rounded-xl overflow-hidden h-28" style={{ background: "#E7F4EF" }}>
+                      {w.contractorPhotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={w.contractorPhotoUrl} alt="Contractor after" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center"><IconCheck size={26} color="#0E8A5F" /></div>
+                      )}
+                      <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: "rgba(10,31,60,0.85)", color: "white" }}>Contractor after</span>
+                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button onClick={() => { verifyLiveReport(w.id); setView("home"); }}
-                      className="flex-1 py-3 rounded-2xl text-sm font-bold text-white" style={{ background: "#0E8A5F" }}>
-                      Approve Work
-                    </button>
-                    <button onClick={() => { disputeWorkOrder(w.id, "Work not up to standard — the issue still persists on site."); setView("home"); }}
-                      className="flex-1 py-3 rounded-2xl text-sm font-bold border" style={{ background: "#FEF0EE", color: "#C0392B", borderColor: "#C0392B" }}>
-                      Reject / Dispute
-                    </button>
+                  {/* Amber instruction */}
+                  <div className="rounded-xl p-3 mb-3" style={{ background: "#FFF8E1", border: "1px solid #C6A55C" }}>
+                    <p className="text-xs" style={{ color: "#8A6D1A" }}>
+                      Visit the site and take your <span className="font-bold">own after-photo</span> from the same angle. Payment releases <span className="font-bold">only after your verification.</span>
+                    </p>
                   </div>
+
+                  {/* Hidden photo input per work order */}
+                  <input
+                    type="file" accept="image/*" className="hidden"
+                    id={`rep-verify-${w.id}`}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) { verifyLiveReport(w.id, URL.createObjectURL(f)); setView("home"); } }}
+                  />
+
+                  {/* Verify: take matching photo */}
+                  <button onClick={() => document.getElementById(`rep-verify-${w.id}`)?.click()}
+                    className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 mb-2 text-sm font-bold text-white" style={{ background: "#0E8A5F" }}>
+                    <IconCamera size={16} className="text-white" /> Verified: take matching photo
+                  </button>
+
+                  {/* Not acceptable: return job */}
+                  <button onClick={() => { disputeWorkOrder(w.id, "Work not up to standard — the issue still persists on site."); setView("home"); }}
+                    className="w-full py-3.5 rounded-2xl text-sm font-bold border" style={{ background: "white", color: "#C0392B", borderColor: "#C0392B" }}>
+                    Not acceptable: return job
+                  </button>
                 </div>
               ))}
 
