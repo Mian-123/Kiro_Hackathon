@@ -478,3 +478,88 @@ export const MOCK_CONTRACTORS: MockContractor[] = [
   { id: "con-002", name: "Metro Contractors",  specialty: "Water & Sewerage",       rating: 4.4, completedJobs: 98,  pendingJobs: 5, avatarInitials: "MC" },
   { id: "con-003", name: "Lahore Infra Co",    specialty: "General Civil Works",    rating: 4.1, completedJobs: 76,  pendingJobs: 2, avatarInitials: "LI" },
 ];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Mayor / Ops — City Command Center mock data
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const MOCK_CITY_KPIS = {
+  citywideStreetScore: 68.2,
+  scoreTrend: 1.1,
+  complaintsToday: 24,
+  resolvedOnTimePct: 71,
+  streetsInRed: 438,
+  streetsMapped: 11240,
+};
+
+export interface MockDistrict {
+  rank: number;
+  name: string;
+  score: number;
+  onTimePct: number;
+  trend: number;
+  mostImproved?: boolean;
+}
+
+export const MOCK_DISTRICT_LEAGUE: MockDistrict[] = [
+  { rank: 1, name: "Gulberg",          score: 74.6, onTimePct: 78, trend: +2.3 },
+  { rank: 2, name: "Data Ganj Bakhsh", score: 73.1, onTimePct: 76, trend: +0.8 },
+  { rank: 3, name: "Shalimar",         score: 70.4, onTimePct: 72, trend: +1.5 },
+  { rank: 4, name: "Samanabad",        score: 66.0, onTimePct: 69, trend: -0.4 },
+  { rank: 5, name: "Ravi",             score: 63.3, onTimePct: 67, trend: +3.1, mostImproved: true },
+  { rank: 6, name: "Allama Iqbal",     score: 61.2, onTimePct: 62, trend: +0.6 },
+  { rank: 7, name: "Nishtar",          score: 57.9, onTimePct: 58, trend: -1.2 },
+];
+
+export interface MockUrgentStreet {
+  id: string;
+  name: string;
+  score: number;
+  redForDays: number;
+  officer: string;
+  uc: string;
+  note: string;
+  action: "escalate" | "plan_filed" | "in_enforcement";
+}
+
+export const MOCK_URGENT_STREETS: MockUrgentStreet[] = [
+  { id: "us-1", name: "Drain Rd, Block C, Model Town", score: 38, redForDays: 24, officer: "R. Baloch", uc: "UC-31", note: "associated to District", action: "escalate" },
+  { id: "us-2", name: "St 3, G1 Market, Johar Town",   score: 44, redForDays: 11, officer: "K. Sheikh", uc: "UC-14", note: "improvement plan filed", action: "plan_filed" },
+  { id: "us-3", name: "Ferozpur Rd Segment, Central",  score: 41, redForDays: 6,  officer: "UC-27",      uc: "UC-27", note: "encroachment case in enforcement", action: "in_enforcement" },
+  { id: "us-4", name: "Main Blvd, Gulberg",            score: 39, redForDays: 7,  officer: "AI, UC-55",  uc: "UC-55", note: "drainage blocked, WASA notified", action: "escalate" },
+];
+
+export const MOCK_CONTRACTOR_OVERSIGHT = {
+  topPerformer: { name: "SafeCity Electric", rating: 4.9, onTimePct: 98, note: "priority for larger works" },
+  blacklisted:  { name: "FastFix Traders", reason: "GPS-manipulated photos detected", detail: "citywide ban, June" },
+  underReview:  { name: "Metro Drainage", rating: 3.4, note: "rating 3.4 and falling · assignments reduced" },
+};
+
+export const MOCK_BUDGET_ENFORCEMENT = {
+  monthlySpend: "312M",
+  period: "July spend, citywide",
+  finesIssued: "8.6M",
+  finesDetail: "2,140 fines — dumping 46%, encroachment 31%",
+  communityService: 184,
+  communityServiceNote: "repeat offenders enrolled, where legally allowed",
+  costAnomalyFlags: 3,
+  costAnomalyNote: "work orders above rate card, auto-flagged for audit",
+};
+
+export interface MockUCBreakdown {
+  uc: string;
+  totalSolved: number;
+  pending: number;
+  inProcess: number;
+  completed: number;
+}
+
+export const MOCK_UC_BREAKDOWN: MockUCBreakdown[] = [
+  { uc: "UC-14 Gulberg",     totalSolved: 142, pending: 12, inProcess: 8,  completed: 21 },
+  { uc: "UC-31 Model Town",  totalSolved: 98,  pending: 24, inProcess: 14, completed: 9  },
+  { uc: "UC-55 Johar Town",  totalSolved: 175, pending: 5,  inProcess: 4,  completed: 31 },
+  { uc: "UC-27 DHA Phase 1", totalSolved: 88,  pending: 18, inProcess: 11, completed: 7  },
+  { uc: "UC-10 Cantt",       totalSolved: 210, pending: 8,  inProcess: 2,  completed: 44 },
+  { uc: "UC-42 Iqbal Town",  totalSolved: 115, pending: 31, inProcess: 22, completed: 12 },
+  { uc: "UC-18 Samanabad",   totalSolved: 64,  pending: 45, inProcess: 13, completed: 5  },
+];
