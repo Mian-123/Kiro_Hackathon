@@ -8,10 +8,12 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = "placeholder"
     supabase_jwt_secret: str = "placeholder"
 
-    # AI
-    ai_provider: str = "mock"
+    # AI — set AI_PROVIDER and GROQ_API_KEY in .env
+    ai_provider: str = "groq"
+    groq_api_key: str = ""
+    groq_vision_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    groq_text_model: str = "llama-3.3-70b-versatile"
     openai_api_key: str = ""
-    anthropic_api_key: str = ""
 
     # App
     environment: str = "development"

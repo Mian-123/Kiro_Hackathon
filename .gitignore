@@ -9,6 +9,10 @@ dist/
 build/
 .venv/
 venv/
+
+# Secrets — NEVER commit
+.env
+backend/.env
 *.env
 !.env.example
 
